@@ -16,6 +16,7 @@ public final class JarTask extends Task<JarTask> {
 	public final FinalizeOnRead<String> archiveBaseName;
 	public final FinalizeOnRead<String> archiveVersion;
 	public final FinalizeOnRead<String> archiveClassifier;
+	public final FinalizeOnRead<String> jarName;
 
 	public final FinalizeOnRead<Path> destinationDir;
 
@@ -27,6 +28,7 @@ public final class JarTask extends Task<JarTask> {
 		this.archiveBaseName = FinalizeOnRead.of(b.archiveBaseName.get());
 		this.archiveVersion = FinalizeOnRead.of(b.version.get());
 		this.archiveClassifier = FinalizeOnRead.of(null);
+		this.jarName = FinalizeOnRead.of(null);
 		this.destinationDir = FinalizeOnRead.of(b.buildDir.resolve("libs"));
 		this.inputDir = FinalizeOnRead.of(b.buildDir.resolve("classes"));
 		this.manifest = new LinkedHashMap<>();
@@ -41,11 +43,14 @@ public final class JarTask extends Task<JarTask> {
 
 	@Override
 	protected void doRun() throws Throwable {
-		String jarFileName = archiveBaseName.get() + "-" + archiveVersion.get();
-		if (archiveClassifier.get() != null) {
-			jarFileName += "-" + archiveClassifier.get();
+		String jarFileName = jarName.get();
+		if(jarFileName == null) {
+			jarFileName = archiveBaseName.get() + "-" + archiveVersion.get();
+			if(archiveClassifier.get() != null) {
+				jarFileName += "-" + archiveClassifier.get();
+			}
+			jarFileName += ".jar";
 		}
-		jarFileName += ".jar";
 
 		Path jarFile = destinationDir.get().resolve(jarFileName);
 
@@ -57,10 +62,8 @@ public final class JarTask extends Task<JarTask> {
 		Path manifestFile = Main.buildscript.buildDir.resolve("jar-manifest.txt");
 		Files.write(manifestFile, manifest.entrySet().stream().map(e -> e.getKey() + ": " + e.getValue()).collect(Collectors.toList()));
 
-		// cf = create file, -C = change to directory, . = current directory
-		ProcessBuilder pb = new ProcessBuilder(jarCmd.toString(), "cf", jarFile.toString(), "-C", inputDir.get().toString(), ".");
-		// add manifest attributes
-		pb.command().add("-m");
+		ProcessBuilder pb = new ProcessBuilder(jarCmd.toString(), "cfm", jarFile.toString(), manifestFile.toString(),
+				"-C", inputDir.get().toString(), ".");
 		Process p = pb.start();
 		int exitCode = p.waitFor();
 

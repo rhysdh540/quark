@@ -20,6 +20,11 @@ public final class CompileJavaTask extends Task<CompileJavaTask> {
 	}
 
 	@Override
+	public String description() {
+		return "Compiles Java source files";
+	}
+
+	@Override
 	protected void doRun() throws Throwable {
 		Path javac = JavaUtils.getJavaBinary("javac");
 

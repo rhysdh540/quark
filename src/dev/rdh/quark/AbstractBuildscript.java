@@ -4,6 +4,7 @@ import dev.rdh.quark.task.ListTasksTask;
 import dev.rdh.quark.task.SimpleTask;
 import dev.rdh.quark.task.TaskContainer;
 import dev.rdh.quark.task.java.CompileJavaTask;
+import dev.rdh.quark.task.java.JarTask;
 import dev.rdh.quark.task.java.WhatJavaAmIUsingTask;
 import dev.rdh.quark.util.FinalizeOnRead;
 import dev.rdh.quark.util.PathUtils;
@@ -26,9 +27,6 @@ public abstract class AbstractBuildscript {
 	public final FinalizeOnRead<String> archiveBaseName = FinalizeOnRead.mustSet();
 
 	public AbstractBuildscript() {
-		setupDefaultTasks();
-		System.out.println("Project directory: " + rootDir);
-
 		try {
 			Path props = rootDir.resolve(".quark/quark.properties");
 			if(Files.exists(props)) {
@@ -45,7 +43,7 @@ public abstract class AbstractBuildscript {
 	public abstract void configure();
 
 	protected final void setupDefaultTasks() {
-		tasks.register("listTasks", new ListTasksTask(this));
+		tasks.register("tasks", new ListTasksTask(this));
 		tasks.register("build", new SimpleTask()).configure(t -> t.description.set("Build the project"));
 
 		tasks.register("clean", new SimpleTask(() -> {
@@ -56,8 +54,17 @@ public abstract class AbstractBuildscript {
 
 		tasks.register("jvm", new WhatJavaAmIUsingTask());
 
-		tasks.register("compileJava", new CompileJavaTask(rootDir.resolve("src"), rootDir.resolve("build/classes"))).configure(t -> {
+		tasks.register("compile", new CompileJavaTask(rootDir.resolve("src"), rootDir.resolve("build/classes"))).configure(t -> {
 			tasks.get("build").dependsOn(t);
 		});
+
+		tasks.register("jar", new JarTask(this)).configure(t -> {
+			tasks.get("build").dependsOn(t);
+			t.dependsOn(tasks.get("compile"));
+		});
+	}
+
+	protected void println(Object o) {
+		System.out.println(o);
 	}
 }

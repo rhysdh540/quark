@@ -18,7 +18,7 @@ public final class ListTasksTask extends Task<ListTasksTask> {
 	protected void doRun() {
 		System.out.println("Tasks:");
 		buildscript.tasks.forEach(task -> {
-			System.out.println("  -" + task.getName() + ": " + task.description());
+			System.out.println("  -" + task.getName() + ": " + (task.description() == null ? "No description" : task.description()));
 			System.out.println("    Type: " + task.getClass().getName());
 		});
 	}

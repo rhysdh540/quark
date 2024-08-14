@@ -59,7 +59,8 @@ public class Main {
 			tasks.remove(taskName);
 			Task<?> task = buildscript.tasks.get(taskName);
 			if(task == null) {
-				throw new RuntimeException("Task not found: " + taskName);
+				System.err.println("Task not found: " + taskName);
+				System.exit(1);
 			}
 
 			for(Task<?> dep : task.getDependencies()) {
