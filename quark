@@ -12,7 +12,7 @@ if [ -n "$JAVA_HOME" ]; then
     if [ ! -x "$JAVA" ]; then
         echo "error: JAVA_HOME is set to an directory without a java executable in it: $JAVA_HOME" >&2
         echo "Please set JAVA_HOME to the location of a JDK installation" >&2
-        return 1
+        exit 1
     fi
 
     JAVAC="$JAVA_HOME/bin/javac"
@@ -20,7 +20,7 @@ else
     if [ ! "$(command -v java)" ]; then
         echo "error: JAVA_HOME not set and \`java\` command not found" >&2
         echo "Please set JAVA_HOME to the location of a JDK installation" >&2
-        return 1
+        exit 1
     fi
 
     JAVA=java
@@ -80,7 +80,7 @@ fi
 
 # now run the buildscript
 if [ "$simple" = true ]; then
-  $JAVAC -d build/init "$buildscript"
+  $JAVAC -d build/init "$buildscript" || echo "error: buildscript compilation failed" >&2 && exit 1
   # shellcheck disable=SC2086
   # shellcheck disable=SC2294
   eval $JAVA $JVM_ARGS -cp "build/init" $buildscript "$@"
@@ -90,10 +90,10 @@ else
   if [ ! -f "$jar" ]; then
     echo "error: quark jar not found" >&2
     echo "Please enable simple mode or add the quark jar \`${jar}\`" >&2
-    return 1
+    exit 1
   fi
 
-  $JAVAC -d build/init -cp "$jar" "$buildscript"
+  $JAVAC -d build/init -cp "$jar" "$buildscript" || echo "error: buildscript compilation failed" >&2 && exit 1
 
   # shellcheck disable=SC2086
   # shellcheck disable=SC2294
