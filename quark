@@ -1,0 +1,101 @@
+#!/bin/sh
+
+# first find a java command
+if [ -n "$JAVA_HOME" ]; then
+    if [ -x "$JAVA_HOME/jre/sh/java" ]; then
+        # IBM's JDK on AIX uses strange locations for the executables
+        JAVA="$JAVA_HOME/jre/sh/java"
+    else
+        JAVA="$JAVA_HOME/bin/java"
+    fi
+
+    if [ ! -x "$JAVA" ]; then
+        echo "error: JAVA_HOME is set to an directory without a java executable in it: $JAVA_HOME" >&2
+        echo "Please set JAVA_HOME to the location of a JDK installation" >&2
+        return 1
+    fi
+
+    JAVAC="$JAVA_HOME/bin/javac"
+else
+    if [ ! "$(command -v java)" ]; then
+        echo "error: JAVA_HOME not set and \`java\` command not found" >&2
+        echo "Please set JAVA_HOME to the location of a JDK installation" >&2
+        return 1
+    fi
+
+    JAVA=java
+    JAVAC=javac
+fi
+
+# collect jvm args/properties
+JVM_ARGS=""
+
+trim() {
+  echo "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
+
+# should we use simple mode? (aka use the api jar or not)
+simple=false
+buildscript="Buildscript.java"
+
+# add jvm args from quark.properties
+if [ -f ".quark/quark.properties" ]; then
+  while IFS= read -r line || [ -n "$line" ]; do
+    # Remove leading and trailing whitespaces
+    line=$(trim "$line")
+
+    # Skip empty lines and comments
+    [ -z "$line" ] && continue
+    [ "${line#\#}" != "$line" ] && continue
+
+    if echo "$line" | grep -q "^quark.jvmArgs[ \t]*="; then
+      args=$(echo "$line" | sed 's/^quark.jvmArgs[ \t]*=[ \t]*//')
+      JVM_ARGS="$JVM_ARGS $args"
+    elif echo "$line" | grep -q "^quark.systemProp\."; then
+      key=$(echo "$line" | sed -E 's/^quark.systemProp\.([^=]*)=.*/\1/')
+      value=$(echo "$line" | sed -E 's/^[^=]*=[ \t]*(.*)/\1/')
+      JVM_ARGS="$JVM_ARGS -D$(trim "$key")=$(trim "$value")"
+    fi
+
+    #check for property quark.simple
+    if echo "$line" | grep -q "^quark.simple[ \t]*=[ \t]*true"; then
+      simple=true
+    fi
+
+    #check. for property quark.buildscriptFile
+    if echo "$line" | grep -q "^quark.buildscriptFile[ \t]*=[ \t]*"; then
+      buildscript=$(echo "$line" | sed -E 's/^quark.buildscriptFile[ \t]*=[ \t]*(.*)/\1/')
+    fi
+  done < ".quark/quark.properties"
+fi
+
+# if no memory arguments, add -Xmx64m -Xms64m
+if echo "$JVM_ARGS" | grep -q "\-Xmx"; then
+  true
+else
+  JVM_ARGS="$JVM_ARGS -Xmx64m -Xms64m"
+fi
+
+#
+
+# now run the buildscript
+if [ "$simple" = true ]; then
+  $JAVAC -d build/init "$buildscript"
+  # shellcheck disable=SC2086
+  # shellcheck disable=SC2294
+  eval $JAVA $JVM_ARGS -cp "build/init" $buildscript "$@"
+else
+  jar=".quark/quark.jar"
+
+  if [ ! -f "$jar" ]; then
+    echo "error: quark jar not found" >&2
+    echo "Please enable simple mode or add the quark jar \`${jar}\`" >&2
+    return 1
+  fi
+
+  $JAVAC -d build/init -cp "$jar" "$buildscript"
+
+  # shellcheck disable=SC2086
+  # shellcheck disable=SC2294
+  eval $JAVA $JVM_ARGS -cp "build/init:$jar" dev.rdh.quark.Main $buildscript "$@"
+fi
