@@ -11,7 +11,7 @@ public final class ListFinalizeOnRead<T> {
 	private boolean finalized;
 
 	private ListFinalizeOnRead(List<T> list) {
-		this.list = list;
+		this.list = new ArrayList<>(list);
 		this.finalized = false;
 	}
 
@@ -21,7 +21,7 @@ public final class ListFinalizeOnRead<T> {
 
 	@SafeVarargs
 	public static <T> ListFinalizeOnRead<T> of(T... elements) {
-		return new ListFinalizeOnRead<>(new ArrayList<>(Arrays.asList(elements)));
+		return new ListFinalizeOnRead<>(Arrays.asList(elements));
 	}
 
 	private void checkFinalized() {

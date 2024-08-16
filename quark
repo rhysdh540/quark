@@ -81,7 +81,7 @@ else
 fi
 
 
-auto_imported_packages="java.util java.io java.nio java.nio.file dev.rdh.quark dev.rdh.quark.task dev.rdh.quark.task.java"
+auto_imported_packages="java.util java.io java.nio java.nio.file dev.rdh.quark dev.rdh.quark.task dev.rdh.quark.task.java dev.rdh.quark.util dev.rdh.quark.util.exception"
 
 rm -rf build/init
 mkdir -p build/init
