@@ -43,6 +43,7 @@ public final class JarTask extends Task<JarTask> {
 
 	@Override
 	protected void doRun() throws Throwable {
+		long time = System.currentTimeMillis();
 		String jarFileName = jarName.get();
 		if(jarFileName == null) {
 			jarFileName = archiveBaseName.get() + "-" + archiveVersion.get();
@@ -70,5 +71,8 @@ public final class JarTask extends Task<JarTask> {
 		if(exitCode != 0) {
 			throw new IllegalStateException("Failed to create JAR file");
 		}
+
+		long elapsed = System.currentTimeMillis() - time;
+		System.out.println("Created JAR file " + jarFile + " in " + elapsed + "ms");
 	}
 }

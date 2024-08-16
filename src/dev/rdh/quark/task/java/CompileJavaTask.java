@@ -30,6 +30,7 @@ public final class CompileJavaTask extends Task<CompileJavaTask> {
 
 	@Override
 	protected void doRun() throws Throwable {
+		long time = System.currentTimeMillis();
 		Path javac = JavaUtils.getJavaBinary("javac");
 
 		if(!Files.exists(javac)) {
@@ -68,5 +69,9 @@ public final class CompileJavaTask extends Task<CompileJavaTask> {
 		if(p.exitValue() != 0) {
 			throw new RuntimeException("javac failed with exit code " + p.exitValue());
 		}
+
+		long elapsed = System.currentTimeMillis() - time;
+
+		System.out.println("Compiled " + allClasses.size() + " classes in " + elapsed + "ms");
 	}
 }
