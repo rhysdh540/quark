@@ -1,4 +1,4 @@
-package dev.rdh.quark.util;
+package dev.rdh.quark.util.exception;
 
 @FunctionalInterface
 public interface ThrowingRunnable {

@@ -52,7 +52,7 @@ public final class CompileJavaTask extends Task<CompileJavaTask> {
 
 		Files.createDirectories(outputDir.get());
 
-		Set<Path> allClasses = PathUtils.getFiles(sourceRoot, stream -> stream.filter(p -> p.toString().endsWith(".java")));
+		Set<Path> allClasses = PathUtils.getChildren(sourceRoot, stream -> stream.filter(p -> !Files.isDirectory(p) && p.toString().endsWith(".java")));
 
 		ProcessBuilder pb = new ProcessBuilder(javac.toString(), "-d", outputDir.get().toString())
 			.inheritIO();
@@ -61,7 +61,6 @@ public final class CompileJavaTask extends Task<CompileJavaTask> {
 		for(Path p : allClasses) {
 			pb.command().add(p.toString());
 		}
-
 
 		Process p = pb.start();
 		p.waitFor();

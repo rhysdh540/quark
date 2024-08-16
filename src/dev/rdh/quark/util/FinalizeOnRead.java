@@ -38,5 +38,10 @@ public final class FinalizeOnRead<T> {
 		this.value = value;
 	}
 
+	@Override
+	public String toString() {
+		return get().toString();
+	}
+
 	private static final Object UNSET = new Object();
 }

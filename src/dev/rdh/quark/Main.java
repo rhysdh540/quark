@@ -1,6 +1,7 @@
 package dev.rdh.quark;
 
 import dev.rdh.quark.task.Task;
+import dev.rdh.quark.util.exception.Exceptions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,7 +44,11 @@ public class Main {
 		}
 
 		String buildscriptClassName = args[0];
-		buildscriptClassName = buildscriptClassName.substring(0, buildscriptClassName.length() - 5); // Remove .java
+		if(!buildscriptClassName.endsWith(".java")) {
+			throw new RuntimeException("somehow you compiled a non-java file");
+		}
+
+		buildscriptClassName = buildscriptClassName.substring(0, buildscriptClassName.length() - 5).replace('/', '.');
 
 		Class<?> buildscriptClass = Class.forName(buildscriptClassName, true, Main.class.getClassLoader());
 		Object maybeBuildscript = buildscriptClass.getDeclaredConstructor().newInstance();
@@ -52,23 +57,20 @@ public class Main {
 		}
 		buildscript = (AbstractBuildscript) maybeBuildscript;
 
+		System.out.println("~> Configuring project " + buildscript.rootDir);
 		buildscript.configure();
 
-		while(!tasks.isEmpty()) {
-			String taskName = tasks.iterator().next();
-			tasks.remove(taskName);
+		Set<Task<?>> tasksToRun = new LinkedHashSet<>();
+		for(String taskName : tasks) {
 			Task<?> task = buildscript.tasks.get(taskName);
 			if(task == null) {
-				System.err.println("Task not found: " + taskName);
-				System.exit(1);
+				throw new RuntimeException("Task " + taskName + " not found");
 			}
 
-			for(Task<?> dep : task.getDependencies()) {
-				// If the user has already requested this task, don't run it again later
-				tasks.remove(dep.getName());
-			}
-
-			task.run();
+			tasksToRun.addAll(task.getDependencies());
+			tasksToRun.add(task);
 		}
+
+		tasksToRun.forEach(Exceptions.uncheckC(Task::run));
 	}
 }

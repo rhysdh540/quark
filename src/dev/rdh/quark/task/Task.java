@@ -22,10 +22,6 @@ public abstract class Task<T extends Task<? super T>> {
 	 * @throws Throwable if an error occurs while running the task or any of its dependencies.
 	 */
 	public final void run() throws Throwable {
-		for(Task<?> t : dependencies) {
-			t.run();
-		}
-
 		System.out.println("~> Task " + getName());
 		this.doRun();
 	}
@@ -72,5 +68,10 @@ public abstract class Task<T extends Task<? super T>> {
 	@SuppressWarnings("unchecked")
 	public final void configure(Consumer<T> c) {
 		c.accept((T) this);
+	}
+
+	@Override
+	public String toString() {
+		return String.format("Task '%s'", getName());
 	}
 }

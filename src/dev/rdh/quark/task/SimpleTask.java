@@ -1,7 +1,7 @@
 package dev.rdh.quark.task;
 
 import dev.rdh.quark.util.FinalizeOnRead;
-import dev.rdh.quark.util.ThrowingRunnable;
+import dev.rdh.quark.util.exception.ThrowingRunnable;
 
 public class SimpleTask extends Task<SimpleTask> {
 	private final ThrowingRunnable action;

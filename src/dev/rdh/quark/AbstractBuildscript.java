@@ -18,7 +18,7 @@ import java.util.Set;
 public abstract class AbstractBuildscript {
 	public final TaskContainer tasks = new TaskContainer();
 
-	protected final Path rootDir = Paths.get(".").toAbsolutePath();
+	protected final Path rootDir = Paths.get("").toAbsolutePath();
 	public final Path buildDir = rootDir.resolve("build");
 
 	protected final Properties properties = new Properties();
@@ -47,7 +47,7 @@ public abstract class AbstractBuildscript {
 		tasks.register("build", new SimpleTask()).configure(t -> t.description.set("Build the project"));
 
 		tasks.register("clean", new SimpleTask(() -> {
-			Set<Path> dirs = PathUtils.getAllChildren(buildDir);
+			Set<Path> dirs = PathUtils.getDirectChildren(buildDir);
 			dirs.remove(buildDir.resolve("init")); // Don't delete the init directory, we're running in it right now!
 			dirs.forEach(PathUtils::deleteRecursively);
 		})).configure(t -> t.description.set("Delete the build directory"));

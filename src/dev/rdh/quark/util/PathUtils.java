@@ -14,19 +14,12 @@ public final class PathUtils {
 	}
 
 	public static Set<Path> getFiles(Path root) {
-		try(Stream<Path> stream = Files.walk(root)) {
-			return stream
-				.filter(Files::isRegularFile)
-				.collect(Collectors.toSet());
-		} catch(IOException e) {
-			throw new UncheckedIOException(e);
-		}
+		return getChildren(root, s -> s.filter(Files::isRegularFile));
 	}
 
-	public static Set<Path> getFiles(Path root, UnaryOperator<Stream<Path>> transformer) {
+	public static Set<Path> getChildren(Path root, UnaryOperator<Stream<Path>> transformer) {
 		try(Stream<Path> stream = Files.walk(root)) {
 			return transformer.apply(stream)
-				.filter(Files::isRegularFile)
 				.collect(Collectors.toSet());
 		} catch(IOException e) {
 			throw new UncheckedIOException(e);
@@ -49,13 +42,7 @@ public final class PathUtils {
 		}
 	}
 
-	public static Set<Path> getAllChildren(Path root) {
-		try(Stream<Path> stream = Files.walk(root)) {
-			return stream
-				.filter(p -> p.getParent().equals(root))
-				.collect(Collectors.toSet());
-		} catch(IOException e) {
-			throw new UncheckedIOException(e);
-		}
+	public static Set<Path> getDirectChildren(Path root) {
+		return getChildren(root, s -> s.filter(p -> p.getParent().equals(root)));
 	}
 }
