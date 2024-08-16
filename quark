@@ -51,20 +51,24 @@ if [ -f ".quark/quark.properties" ]; then
     if echo "$line" | grep -q "^quark.jvmArgs[ \t]*="; then
       args=$(echo "$line" | sed 's/^quark.jvmArgs[ \t]*=[ \t]*//')
       JVM_ARGS="$JVM_ARGS $args"
+      continue
     elif echo "$line" | grep -q "^quark.systemProp\."; then
       key=$(echo "$line" | sed -E 's/^quark.systemProp\.([^=]*)=.*/\1/')
       value=$(echo "$line" | sed -E 's/^[^=]*=[ \t]*(.*)/\1/')
       JVM_ARGS="$JVM_ARGS -D$(trim "$key")=$(trim "$value")"
+      continue
     fi
 
     #check for property quark.simple
     if echo "$line" | grep -q "^quark.simple[ \t]*=[ \t]*true"; then
       simple=true
+      continue
     fi
 
     #check. for property quark.buildscriptFile
     if echo "$line" | grep -q "^quark.buildscriptFile[ \t]*=[ \t]*"; then
       buildscript=$(echo "$line" | sed -E 's/^quark.buildscriptFile[ \t]*=[ \t]*(.*)/\1/')
+      continue
     fi
   done < ".quark/quark.properties"
 fi
