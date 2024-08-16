@@ -13,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
-import java.util.Set;
 
 public abstract class AbstractBuildscript {
 	public final TaskContainer tasks = new TaskContainer();
@@ -45,14 +44,14 @@ public abstract class AbstractBuildscript {
 	protected final void setupDefaultTasks() {
 		tasks.register("tasks", new ListTasksTask(this));
 		tasks.register("build", new SimpleTask()).configure(t -> t.description.set("Build the project"));
+		tasks.register("jvm", new WhatJavaAmIUsingTask());
 
 		tasks.register("clean", new SimpleTask(() -> {
-			Set<Path> dirs = PathUtils.getDirectChildren(buildDir);
-			dirs.remove(buildDir.resolve("init")); // Don't delete the init directory, we're running in it right now!
-			dirs.forEach(PathUtils::deleteRecursively);
+			PathUtils.getChildren(buildDir, s -> s.filter(p ->
+							p.getParent().equals(buildDir) // gets the direct children of the build directory, but not init
+									&& !p.equals(buildDir.resolve("init")))
+					).forEach(PathUtils::deleteRecursively);
 		})).configure(t -> t.description.set("Delete the build directory"));
-
-		tasks.register("jvm", new WhatJavaAmIUsingTask());
 
 		tasks.register("compile", new CompileJavaTask(rootDir.resolve("src"), rootDir.resolve("build/classes"))).configure(t -> {
 			tasks.get("build").dependsOn(t);

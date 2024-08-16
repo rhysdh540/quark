@@ -9,7 +9,7 @@ public class SimpleTask extends Task<SimpleTask> {
 
 	public SimpleTask(ThrowingRunnable action) {
 		this.action = action;
-		this.description = FinalizeOnRead.of("");
+		this.description = FinalizeOnRead.of(null);
 	}
 
 	public SimpleTask() {
