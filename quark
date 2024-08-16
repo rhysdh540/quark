@@ -76,11 +76,19 @@ else
   JVM_ARGS="$JVM_ARGS -Xmx64m -Xms64m"
 fi
 
-#
+
+auto_imported_packages="java.util java.io java.nio java.nio.file dev.rdh.quark dev.rdh.quark.task dev.rdh.quark.task.java"
+
+rm -rf build/init
+mkdir -p build/init
 
 # now run the buildscript
 if [ "$simple" = true ]; then
-  $JAVAC -d build/init "$buildscript" || echo "error: buildscript compilation failed" >&2 && exit 1
+  if ! $JAVAC -d build/init "$buildscript"; then
+    echo "error: buildscript compilation failed" >&2
+    exit 1
+  fi
+
   # shellcheck disable=SC2086
   # shellcheck disable=SC2294
   eval $JAVA $JVM_ARGS -cp "build/init" $buildscript "$@"
@@ -93,7 +101,19 @@ else
     exit 1
   fi
 
-  $JAVAC -d build/init -cp "$jar" "$buildscript" || echo "error: buildscript compilation failed" >&2 && exit 1
+  if ! cp "$buildscript" build/init; then
+    echo "error: buildscript copy failed" >&2
+    exit 1
+  fi
+
+  # auto-add imports to the top
+  # shellcheck disable=SC2005
+  echo "$(echo "$auto_imported_packages" | sed 's/ /.*;import /g' | sed 's/^/import /' | sed 's/$/.*; /')" | cat - build/init/"$buildscript" > temp && mv temp build/init/"$buildscript"
+
+  if ! $JAVAC -d build/init -cp "$jar" "build/init/$buildscript"; then
+    echo "error: buildscript compilation failed" >&2
+    exit 1
+  fi
 
   # shellcheck disable=SC2086
   # shellcheck disable=SC2294

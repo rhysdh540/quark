@@ -3,6 +3,7 @@ package dev.rdh.quark.task.java;
 import dev.rdh.quark.task.Task;
 import dev.rdh.quark.util.FinalizeOnRead;
 import dev.rdh.quark.util.JavaUtils;
+import dev.rdh.quark.util.ListFinalizeOnRead;
 import dev.rdh.quark.util.PathUtils;
 
 import java.nio.file.Files;
@@ -14,9 +15,12 @@ public final class CompileJavaTask extends Task<CompileJavaTask> {
 	public final FinalizeOnRead<Path> sourceRoot;
 	public final FinalizeOnRead<Path> outputDir;
 
+	public final ListFinalizeOnRead<String> compilerArgs;
+
 	public CompileJavaTask(Path sourceRoot, Path outputDir) {
 		this.sourceRoot = FinalizeOnRead.of(sourceRoot);
 		this.outputDir = FinalizeOnRead.of(outputDir);
+		this.compilerArgs = ListFinalizeOnRead.of();
 	}
 
 	@Override
@@ -52,9 +56,13 @@ public final class CompileJavaTask extends Task<CompileJavaTask> {
 
 		ProcessBuilder pb = new ProcessBuilder(javac.toString(), "-d", outputDir.get().toString())
 			.inheritIO();
+		pb.command().addAll(compilerArgs.get());
+
 		for(Path p : allClasses) {
 			pb.command().add(p.toString());
 		}
+
+
 		Process p = pb.start();
 		p.waitFor();
 

@@ -1,6 +1,3 @@
-import dev.rdh.quark.AbstractBuildscript;
-import dev.rdh.quark.task.java.JarTask;
-
 public class Buildscript extends AbstractBuildscript {
 	public void configure() {
 		println("quark-ception");
@@ -15,6 +12,11 @@ public class Buildscript extends AbstractBuildscript {
 
 			t.jarName.set("quark.jar");
 			t.destinationDir.set(rootDir.resolve(".quark"));
+		});
+
+		tasks.get("compile", CompileJavaTask.class).configure(t -> {
+			t.compilerArgs.addAll("--release", "8");
+			t.compilerArgs.addAll("-Xlint:-options");
 		});
 	}
 }
