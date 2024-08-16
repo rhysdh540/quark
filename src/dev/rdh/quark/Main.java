@@ -3,6 +3,8 @@ package dev.rdh.quark;
 import dev.rdh.quark.task.Task;
 import dev.rdh.quark.util.exception.Exceptions;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -12,7 +14,7 @@ import java.util.Set;
 public class Main {
 	public static AbstractBuildscript buildscript;
 
-	public static void main(String[] args) throws Throwable {
+	public static void main(String[] args) {
 		List<String> argsList = new ArrayList<>(Arrays.asList(args));
 		argsList.remove(0); // Remove the buildscript class name from the arguments
 
@@ -50,12 +52,29 @@ public class Main {
 
 		buildscriptClassName = buildscriptClassName.substring(0, buildscriptClassName.length() - 5).replace('/', '.');
 
-		Class<?> buildscriptClass = Class.forName(buildscriptClassName, true, Main.class.getClassLoader());
-		Object maybeBuildscript = buildscriptClass.getDeclaredConstructor().newInstance();
-		if(!(maybeBuildscript instanceof AbstractBuildscript)) {
-			throw new RuntimeException("Buildscript class " + buildscriptClass.getName() + " must extend AbstractBuildscript");
+		try {
+			Class<?> buildscriptClass = Class.forName(buildscriptClassName, true, Main.class.getClassLoader());
+			Constructor<?> constructor = buildscriptClass.getConstructor();
+			constructor.setAccessible(true);
+			Object maybeBuildscript = constructor.newInstance();
+
+			if(!(maybeBuildscript instanceof AbstractBuildscript)) {
+				throw new RuntimeException("Buildscript class " + buildscriptClass.getName() + " must extend AbstractBuildscript");
+			}
+
+			buildscript = (AbstractBuildscript) maybeBuildscript;
+
+		} catch(ClassNotFoundException e) { // class doesn't exist
+			throw new RuntimeException("Buildscript class " + buildscriptClassName + " not found");
+		} catch (NoSuchMethodException e) { // no no-arg constructor
+			throw new RuntimeException("Buildscript class " + buildscriptClassName + " must have a no-arg constructor");
+		} catch (InvocationTargetException e) { // constructor threw an exception
+			throw Exceptions.asUnchecked(e);
+		} catch (InstantiationException e) { // abstract class
+			throw new RuntimeException("Buildscript class " + buildscriptClassName + " must be concrete");
+		} catch (IllegalAccessException e) { // should never happen, we setAccessible(true)
+			throw new RuntimeException("what?", e);
 		}
-		buildscript = (AbstractBuildscript) maybeBuildscript;
 
 		System.out.println("~> Configuring project " + buildscript.rootDir);
 		buildscript.configure();
