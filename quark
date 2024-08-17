@@ -1,32 +1,5 @@
 #!/bin/sh
 
-# first find a java command
-if [ -n "$JAVA_HOME" ]; then
-    if [ -x "$JAVA_HOME/jre/sh/java" ]; then
-        # IBM's JDK on AIX uses strange locations for the executables
-        JAVA="$JAVA_HOME/jre/sh/java"
-    else
-        JAVA="$JAVA_HOME/bin/java"
-    fi
-
-    if [ ! -x "$JAVA" ]; then
-        echo "error: JAVA_HOME is set to an directory without a java executable in it: $JAVA_HOME" >&2
-        echo "Please set JAVA_HOME to the location of a JDK installation" >&2
-        exit 1
-    fi
-
-    JAVAC="$JAVA_HOME/bin/javac"
-else
-    if [ ! "$(command -v java)" ]; then
-        echo "error: JAVA_HOME not set and \`java\` command not found" >&2
-        echo "Please set JAVA_HOME to the location of a JDK installation" >&2
-        exit 1
-    fi
-
-    JAVA=java
-    JAVAC=javac
-fi
-
 # collect jvm args/properties
 JVM_ARGS=""
 
@@ -34,9 +7,21 @@ trim() {
   echo "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
 }
 
-# should we use simple mode? (aka use the api jar or not)
-simple=false
+# create ./quark and ./quark/quark.properties
+if [ ! -d ".quark" ]; then
+  mkdir ".quark"
+fi
+
+if [ ! -f ".quark/quark.properties" ]; then
+  {
+    echo "# quark properties"
+    echo "quark.jvmArgs=-Xmx512m -Xms512m"
+  } > ".quark/quark.properties"
+fi
+
+simple=false # should we use simple mode? (aka use the api jar or not)
 buildscript="Buildscript.java"
+warn_on_no_java_home=true
 
 # add jvm args from quark.properties
 if [ -f ".quark/quark.properties" ]; then
@@ -59,27 +44,55 @@ if [ -f ".quark/quark.properties" ]; then
       continue
     fi
 
-    #check for property quark.simple
     if echo "$line" | grep -q "^quark.simple[ \t]*=[ \t]*true"; then
       simple=true
       continue
     fi
 
-    #check. for property quark.buildscriptFile
     if echo "$line" | grep -q "^quark.buildscriptFile[ \t]*=[ \t]*"; then
       buildscript=$(echo "$line" | sed -E 's/^quark.buildscriptFile[ \t]*=[ \t]*(.*)/\1/')
       continue
     fi
+
+    if echo "$line" | grep -q "^quark.suppressJavaHomeWarning[ \t]*=[ \t]*false"; then
+      warn_on_no_java_home=false
+      continue
+    fi
+
   done < ".quark/quark.properties"
 fi
 
-# if no memory arguments, add -Xmx64m -Xms64m
-if echo "$JVM_ARGS" | grep -q "\-Xmx"; then
-  true
-else
-  JVM_ARGS="$JVM_ARGS -Xmx64m -Xms64m"
-fi
+# find a jvm
+if [ -n "$JAVA_HOME" ]; then
+    if [ -x "$JAVA_HOME/jre/sh/java" ]; then
+        # IBM's JDK on AIX uses strange locations for the executables
+        JAVA="$JAVA_HOME/jre/sh/java"
+    else
+        JAVA="$JAVA_HOME/bin/java"
+    fi
 
+    if [ ! -x "$JAVA" ]; then
+        echo "error: JAVA_HOME is set to an directory without a java executable in it: $JAVA_HOME" >&2
+        echo "Please set JAVA_HOME to the location of a JDK installation" >&2
+        exit 1
+    fi
+
+    JAVAC="$JAVA_HOME/bin/javac"
+else
+    if warn_on_no_java_home; then
+        echo "warning: JAVA_HOME not set" >&2
+        echo "Disable this warning by setting quark.suppressJavaHomeWarning=false in .quark/quark.properties" >&2
+    fi
+
+    if [ ! "$(command -v java)" ]; then
+        echo "error: JAVA_HOME not set and \`java\` command not found" >&2
+        echo "Please set JAVA_HOME to the location of a JDK installation" >&2
+        exit 1
+    fi
+
+    JAVA=java
+    JAVAC=javac
+fi
 
 auto_imported_packages="java.util java.io java.nio java.nio.file dev.rdh.quark dev.rdh.quark.task dev.rdh.quark.task.java dev.rdh.quark.util dev.rdh.quark.util.exception"
 

@@ -8,7 +8,20 @@ public final class JavaUtils {
 	private JavaUtils() {
 	}
 
-	public static final String JAVA_HOME = System.getProperty("java.home");
+	public static final String JAVA_HOME;
+	public static final String JAVA_VERSION = System.getProperty("java.version");
+	public static final String JAVA_VENDOR = System.getProperty("java.vendor");
+
+	public static final int JAVA_VERSION_MAJOR = Integer.parseInt(JAVA_VERSION.split("\\.")[0]);
+
+	static {
+		String javaHome = System.getProperty("java.home");
+		if (javaHome.endsWith("jre") && JAVA_VERSION_MAJOR <= 8) {
+			JAVA_HOME = Paths.get(javaHome).getParent().toString();
+		} else {
+			JAVA_HOME = javaHome;
+		}
+	}
 
 	//IBM's JDK on AIX uses strange locations for the executables
 	private static final boolean IS_IBM_JDK = Files.exists(Paths.get(JAVA_HOME, "jre", "sh"));

@@ -1,6 +1,7 @@
 package dev.rdh.quark.task.java;
 
 import dev.rdh.quark.task.Task;
+import dev.rdh.quark.util.JavaUtils;
 
 public final class WhatJavaAmIUsingTask extends Task<WhatJavaAmIUsingTask> {
 	public WhatJavaAmIUsingTask() {
@@ -13,6 +14,7 @@ public final class WhatJavaAmIUsingTask extends Task<WhatJavaAmIUsingTask> {
 
 	@Override
 	protected void doRun() {
-		System.out.printf("Running on Java version %s, by %s%n", System.getProperty("java.version"), System.getProperty("java.vendor"));
+		System.out.printf("Running on Java version %s, by %s%n", JavaUtils.JAVA_VERSION, JavaUtils.JAVA_VENDOR);
+		System.out.printf("Java home: %s%n", JavaUtils.JAVA_HOME);
 	}
 }
